@@ -1,2 +1,2 @@
-# personal-python-project-template
-Personal template for python project with source directory
+# webrute
+Python bruteforce library for websites

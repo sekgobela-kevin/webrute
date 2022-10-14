@@ -1,2 +1,2 @@
-__name__ = "project"
+__name__ = "webrute"
 ___version__ = "0.0.1"
