@@ -20,18 +20,19 @@ def setup_custom_request(target, record):
     return _request.Request(**request_info)
 
 
-def connect_function(target, record, session):
+def connect_function(target, record, session=None):
     r'''Performs request into target using information from record.
 
     Both target and record provide information for performing request.
     'requests' and 'aiohttp' are likely to be used for the request.'''
     custom_request = setup_custom_request(target, record)
-    return _session.request(custom_request)
+    return _session.request(custom_request, session)
 
 async def async_connect_funcion(target, record, session=None):
     '''Performs async request into target using information from record'''
     custom_request = setup_custom_request(target, record)
-    return await _session.arequest(custom_request)
+    print(session)
+    return await _session.arequest(custom_request, session)
 
 
 def target_reached(response):
