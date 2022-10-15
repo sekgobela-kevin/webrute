@@ -1,5 +1,6 @@
 from webrute import _response
 from webrute import _request
+
 import requests
 import aiohttp
 import requests_html
@@ -244,15 +245,98 @@ def create_render_asession(*args, **kwargs):
 
 
 
+# Performs request from function to create session and custom response.
+# There functions will be used for creating request without session.
+def to_custom_request(request_info, request_type=None):
+    # Converts information about request into Request like object.
+    if isinstance(request_info, dict):
+        if request_type is not None:
+            return request_type(**request_info)
+        else:
+            return _request.Request(**request_info)
+    return request_info
+
+
+
+def perform_request(session_func, request_info, request_type=None):
+    """Performs request using provided session function and request"""
+    session = session_func()
+    custom_request = to_custom_request(request_info, request_type)
+    response = session.request(custom_request)
+    session.close()
+    return response
+
+async def perform_arequest(session_func, custom_request):
+    """Performs request using provided session function and request"""
+    session = session_func()
+    response = await session.request(custom_request)
+    await session.close()
+    return response
+
+
+def request(custom_request, session=None):
+    """Performs request without requiring session"""
+    if session is None:
+        return perform_request(create_session, custom_request)
+    return session.request(custom_request)
+
+async def arequest(custom_request, session=None):
+    """Performs async request without requiring session"""
+    if session is None:
+        return await perform_arequest(create_asession, custom_request)
+    return await session.request(custom_request)
+
+
+
+
+
+
+# Performs request without requiring session
+def post(url, **kwargs):
+    custom_request = _request.RequestPost(url, **kwargs)
+    return perform_request(RequestSession, custom_request)
+
+def get(url, **kwargs):
+    custom_request = _request.RequestGet(url, **kwargs)
+    return perform_request(RequestSession, custom_request)
+
+def put(url, **kwargs):
+    custom_request = _request.RequestPut(url, **kwargs)
+    return perform_request(RequestSession, custom_request)
+
+def delete(url, **kwargs):
+    custom_request = _request.RequestDelete(url, **kwargs)
+    return perform_request(RequestSession, custom_request)
+
+
+
+# Performs async request without requiring session
+async def apost(url, **kwargs):
+    custom_request = _request.RequestPost(url, **kwargs)
+    return await arequest(RequestSession, custom_request)
+
+async def aget(url, **kwargs):
+    custom_request = _request.RequestGet(url, **kwargs)
+    return await arequest(RequestSession, custom_request)
+
+async def aput(url, **kwargs):
+    custom_request = _request.RequestPut(url, **kwargs)
+    return await arequest(RequestSession, custom_request)
+
+async def adelete(url, **kwargs):
+    custom_request = _request.RequestDelete(url, **kwargs)
+    return await arequest(RequestSession, custom_request)
+
+
 
 if __name__ == "__main__":
 
     async def main():
-        session = create_asession()
+        #session = create_asession()
         custom_request = _request.RequestGet("https://www.example.com/")
-        response = await session.request(custom_request)
+        response = await arequest(custom_request)
         print(await response.get_bytes())
-        await session.close()
+        #await session.close()
         
 
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
