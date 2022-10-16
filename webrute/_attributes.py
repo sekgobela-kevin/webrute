@@ -1,0 +1,151 @@
+from webrute import exceptions
+
+
+class Attributes():
+    _unsupported_attrs = set()
+    _supported_attrs = None
+    _validate_attrs = True
+
+    _default_attr = object()
+
+    def __init__(self, **kwargs) -> None:
+        if self._validate_attrs:
+            self.raise_for_unsupported(kwargs)
+        self._attrs_dict = kwargs
+
+    def get_attr(self, attr, default=None):
+        try:
+            return self._attrs_dict[attr]
+        except KeyError:
+            return default
+            # erro_msg = "Attribute '{}' does not exists"
+            # raise exceptions.AttributeNotFound(erro_msg.format(attr))
+
+    def get_attrs(self):
+        return self._attrs_dict
+
+    def get_attrs_keys(self):
+        return tuple(self._attrs_dict.key())
+
+    def get_attrs_values(self):
+        return tuple(self._attrs_dict.values())
+
+    def attr_exists(self, attr):
+        return attr in self._attrs_dict
+
+    @classmethod
+    def attr_supported(cls, attr):
+        if attr in cls._unsupported_attrs:
+            return False
+        elif cls._supported_attrs is None:
+            return True
+        return attr in cls._supported_attrs
+
+    @classmethod
+    def attrs_supported(cls, attrs, min_ratio=None):
+        if min_ratio is not None:
+            return all(map(cls.attr_supported, attrs))
+        else:
+            filtered_attrs = list(filter(cls.attr_supported, attrs))
+            return min_ratio <= len(filtered_attrs)/len(attrs)
+
+    @classmethod
+    def get_supported_attrs(cls, attr):
+        if cls._supported_attrs is None:
+            return set()
+        return cls._supported_attrs
+
+    @classmethod
+    def get_unsupported_attrs(cls, attr):
+        return cls._unsupported_attrs
+
+    @classmethod
+    def raise_for_unsupported(cls, attrs):
+        for attr in attrs:
+            if not cls.is_attr_supported(attr):
+                err_msg = "Attribute '{}' is not supported by '{}'"
+                err_msg = err_msg.format(attr, cls.__name__)
+                raise exceptions.UnsupportedAttribute(err_msg)
+
+    def to_dict(self):
+        return self._attrs_dict
+
+    @classmethod
+    def to_instance(cls, object_):
+        # Creates instance of this type from provided object.
+        if isinstance(object_, cls):
+            return object_
+        elif isinstance(object_, Attributes):
+            return cls(**object_.get_attrs())
+        elif isinstance(object_, dict):
+            return cls(**object_)
+        else:
+            return cls(**dict(object_))
+        
+
+    def __add__(self, other):
+        return type(self)({**self._attrs_dict, **other.get_attrs()})
+
+    def copy(self):
+        return type(self)(**self._attrs_dict)
+    
+
+class RequestAttrs(Attributes):
+    _supported_attrs = {
+        "method", "url", "params", "content", "content", "files",
+        "json", "headers", "cookies", "auth", "proxies", "timeout",
+        "follow_redirects", "verify", "cert", "trust_env"
+    }
+
+class RequestNoBodyAttrs(RequestAttrs):
+    _unsupported_attrs = {"data", "files", "json", "content"}
+
+
+class RequestPostAttrs(RequestAttrs):
+    def __init__(self, **kwargs) -> None:
+        kwargs["method"] = "POST"
+        super().__init__(**kwargs)
+
+class RequestPutAttrs(RequestAttrs):
+    def __init__(self, **kwargs) -> None:
+        kwargs["method"] = "PUT"
+        super().__init__(**kwargs)
+
+class RequestGetAttrs(RequestNoBodyAttrs):
+    def __init__(self, **kwargs) -> None:
+        kwargs["method"] = "GET"
+        super().__init__(**kwargs)
+
+
+class RequestOptionAttrs(RequestNoBodyAttrs):
+    def __init__(self, **kwargs) -> None:
+        kwargs["method"] = "OPTION"
+        super().__init__(**kwargs)
+
+class RequestDeleteAttrs(RequestNoBodyAttrs):
+    def __init__(self, **kwargs) -> None:
+        kwargs["method"] = "DELETE"
+        super().__init__(**kwargs)
+
+
+class TargetAttrs(RequestAttrs):
+    pass
+
+class TargetPostAttrs(RequestPostAttrs):
+    pass
+
+class TargetGetAttrs(TargetAttrs):
+    pass
+
+
+class RecordAttrs(RequestAttrs):
+    pass
+
+class SessionAttrs(Attributes):
+    _supported_attrs = {
+        "auth", "params", "headers", "cookies", "verify", "cert", 
+        "http1", "http2", "proxies", "mounts", "timeout", "follow_redirects",
+         "limits", "max_keepalive_connections", "keepalive_expiry", 
+         "max_redirects", "event_hooks", "base_url", "transport", "app", 
+         "trust_env", "default_encoding"
+    }
