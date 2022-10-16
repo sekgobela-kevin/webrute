@@ -31,7 +31,6 @@ def connect_function(target, record, session=None):
 async def async_connect_funcion(target, record, session=None):
     '''Performs async request into target using information from record'''
     custom_request = setup_custom_request(target, record)
-    print(session)
     return await _session.arequest(custom_request, session)
 
 
@@ -90,7 +89,9 @@ def setup_normal_runner(super_, target, table, **kwargs):
 def setup_async_runner(super_, target, table, **kwargs):
     # Setups non async runner objects.
     # See setup_runner() function above.
-    return setup_runner(async_connect_funcion, _session.create_asession, 
+    async def create_session():
+        return _session.create_asession()
+    return setup_runner(async_connect_funcion, create_session, 
     async_target_reached, super_, target, table, **kwargs)
 
 
