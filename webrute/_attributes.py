@@ -62,7 +62,7 @@ class Attributes():
     @classmethod
     def raise_for_unsupported(cls, attrs):
         for attr in attrs:
-            if not cls.is_attr_supported(attr):
+            if not cls.attr_supported(attr):
                 err_msg = "Attribute '{}' is not supported by '{}'"
                 err_msg = err_msg.format(attr, cls.__name__)
                 raise exceptions.UnsupportedAttribute(err_msg)
@@ -149,3 +149,10 @@ class SessionAttrs(Attributes):
          "max_redirects", "event_hooks", "base_url", "transport", "app", 
          "trust_env", "default_encoding"
     }
+
+
+
+if __name__ == "__main__":
+    attrs_obj = SessionAttrs(headers="header")
+    print(attrs_obj.get_attrs())
+    print(attrs_obj.get_attr("hesaders", object))

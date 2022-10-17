@@ -23,8 +23,15 @@ class Connector():
         # or httpx.Client itself.
         # Function is better a it lets 'broote' creates session itself.
         # Avoid using 'self' here as method is called by initializer.
-        self._session = lambda: self.create_session(session, httpx.Client)
-        
+        if session is None:
+            # Better create session other than leaving it None.
+            self._session = httpx.Client()
+        else:
+            # Session is set to function
+            self._session = lambda: self.create_session(
+                session, httpx.Client
+            )
+
     
     @classmethod
     def create_session(cls, session, session_type):
@@ -70,7 +77,7 @@ class Connector():
         # Target needs to be transformed to make it compatible with request.
         target_attrs = cls.create_target(target)
         # Tries to get method from target if exists.
-        method = record_attrs.get("method", None)
+        method = target_attrs.get_attr("method", None)
         # Transforms record to be compatible with request methods.
         # Not guaranteed to be fully compatible(just take it as compatible)
         compatible_record = cls.transform_record(record, method)
@@ -92,7 +99,7 @@ class Connector():
                 merged_dict["method"] = "POST"
         return merged_dict
 
-    def connect(self, record, session=None):
+    def connect(self, target, record, session=None):
         # Performs actual request using arguments from target and record.
         kwargs = self.create_connector_args(
             self._target, record
@@ -102,25 +109,42 @@ class Connector():
         else:
             return httpx.request(**kwargs)
 
+    def get_target(self):
+        return self._target
+
+    def get_session(self):
+        return self._session
+
 
 class AsyncConnector(Connector):
     def _setup_session(self, session):
         # Setups session either being function returnong httpx.AsyncClient
         # or httpx.AsyncClient itself.
         # Avoid using 'self' here as method is called by initializer.
-        async def create_session():
-            return self.create_session(session, httpx.AsyncClient)
-        return create_session
+        if session is None:
+            # Better create session other than leaving it None.
+            self._session = httpx.AsyncClient()
+        else:
+            async def create_session():
+                return self.create_session(session, httpx.AsyncClient)
+            # Session is set to coroutine function.
+            self._session = create_session
 
-    async def connect(self, record, session=None):
+    async def connect(self, target, record, session=None):
         # Performs async request using arguments from target and record.
         kwargs = self.create_connector_args(
             self._target, record
         )
-        if session:
+        if session is not None:
             return await session.request(**kwargs)
         else:
-            # self._session() need to be called to get actual session.
-            # Note that self._session() was set as coroutine function.
-            async with await self._session() as session:
+            # Session need to be created manually as it was not provided.
+            # That means manually calling session function if neccessary.
+            if callable(self._session):
+                # self._session() need to be called to get actual session.
+                _session = await self._session()
+            else:
+                _session = self._session
+            # Session is now ready to use as usual.
+            async with _session as session:
                 return await session.request(**kwargs)
