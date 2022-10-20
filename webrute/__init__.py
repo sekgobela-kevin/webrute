@@ -25,4 +25,4 @@ from forcetable import *
 
 
 __name__ = "webrute"
-___version__ = "0.0.1"
+___version__ = "0.0.2"
