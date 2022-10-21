@@ -32,7 +32,7 @@ def setup_normal_runner(super_, target, table, **kwargs):
     default_kargs = {
         "target": connector.get_target().get_attrs(),
         "connect": connector.connect,
-        "session": connector.get_session(),
+        "session": connector.get_callable_session(),
         "target_reached": _functions.target_reached,
         "target_error": _functions.target_error
     }
@@ -44,7 +44,7 @@ def setup_async_runner(super_, target, table, **kwargs):
     default_kargs = {
         "target": connector.get_target().get_attrs(),
         "connect": connector.connect,
-        "session": connector.get_session(),
+        "session": connector.get_callable_session(),
         "target_reached": _functions.async_target_reached,
         "target_error": _functions.async_target_error
     }

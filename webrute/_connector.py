@@ -9,43 +9,53 @@ import httpx
 
 
 class Connector():
-    def __init__(self, target, session=None) -> None:
-        self._setup_target(target)
-        self._setup_session(session)
+    _session_type = httpx.Client
 
-    def _setup_target(self, target):
+    def __init__(self, target, session=None) -> None:
+        self._target = self._setup_target(target)
+        self._session = self._setup_session(session)
+        self._callable_session = self._setup_callable_session(session)
+
+    @classmethod
+    def _setup_target(cls, target):
         # Setupstarget to ensure its in right format and type.
         # Avoid using 'self' here as method is called by initializer.
-        self._target = self.create_target(target)
-        
-    def _setup_session(self, session):
-        # Setups session either being function returnong httpx.Client
-        # or httpx.Client itself.
+        return cls.create_target(target)
+
+    @classmethod
+    def _setup_callable_session(cls, session):
+        # Setups httpx client session wrapped within function.
         # Function is better a it lets 'broote' creates session itself.
-        # Avoid using 'self' here as method is called by initializer.
         if session is None:
             # Better create session other than leaving it None.
-            self._session = httpx.Client()
+            _session = lambda: cls._session_type()
+        elif isinstance(session, cls._session_type):
+            _session = lambda: session
+        elif callable(session):
+             _session = session
         else:
             # Session is set to function
-            self._session = lambda: self.create_session(
-                session, httpx.Client
-            )
-
+            _session = lambda: cls.create_session(session) 
+        return _session
     
     @classmethod
-    def create_session(cls, session, session_type):
+    def _setup_session(cls, session):
+        # Setups httpx client session(real session not callable)
+        return cls._setup_callable_session(session)()
+
+    @classmethod
+    def create_session(cls, session):
         # Creates session from object that was passed as session.
         # session is whatever object that was passed as session.
         # It could be httpx.Client, dict, None, etc.
-        if isinstance(session, session_type):
+        if isinstance(session, cls._session_type):
             return session
         else:
             # These lines are not worth it(may be removed in future).
             # Performance is wasted when creating SessionAttrs instance.
             session_attrs = SessionAttrs.to_instance(session)
             attrs_dict = session_attrs.get_attrs()
-            return session_type(**attrs_dict)
+            return cls._session_type(**attrs_dict)
 
     @classmethod
     def create_target(cls, target):
@@ -115,20 +125,12 @@ class Connector():
     def get_session(self):
         return self._session
 
+    def get_callable_session(self):
+        return self._callable_session
+
 
 class AsyncConnector(Connector):
-    def _setup_session(self, session):
-        # Setups session either being function returnong httpx.AsyncClient
-        # or httpx.AsyncClient itself.
-        # Avoid using 'self' here as method is called by initializer.
-        if session is None:
-            # Better create session other than leaving it None.
-            self._session = httpx.AsyncClient()
-        else:
-            async def create_session():
-                return self.create_session(session, httpx.AsyncClient)
-            # Session is set to coroutine function.
-            self._session = create_session
+    _session_type = httpx.AsyncClient
 
     async def connect(self, target, record, session=None):
         # Performs async request using arguments from target and record.
@@ -140,11 +142,5 @@ class AsyncConnector(Connector):
         else:
             # Session need to be created manually as it was not provided.
             # That means manually calling session function if neccessary.
-            if callable(self._session):
-                # self._session() need to be called to get actual session.
-                _session = await self._session()
-            else:
-                _session = self._session
-            # Session is now ready to use as usual.
-            async with _session as session:
+            async with self._callable_session() as session:
                 return await session.request(**kwargs)
