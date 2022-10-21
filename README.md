@@ -1,20 +1,15 @@
 # webrute
-Webrute is python bruteforce library for bruteforcing websites. It can 
-be used to check if certain url works with certain parameters or data
-passed to it. It is based on 
-[broote](https://github.com/sekgobela-kevin/broote) which also does
-bruteforcing but not limited to websites and web requests.
+Webrute is python bruteforce library for http requests built on top of
+[broote](https://github.com/sekgobela-kevin/broote).  It can be used 
+for bruteforce activities involving making https requests including 
+checking status code for request with certain data passed.
 
-Webrute is so similar to 'broote' but it offers opportunity to perform
-web requests. It is currencly using 
-[requests](https://requests.readthedocs.io/projects/requests-html/en/latest/)
-and [aiohttp](https://docs.aiohttp.org/en/stable/client_quickstart.html)
-for performing requests.
+Requests are performed using [httpx](https://www.python-httpx.org/) which
+support [asyncio](https://docs.python.org/3/library/asyncio.html).
 
 > See [broote](https://github.com/sekgobela-kevin/broote) for more.
-
 ### Install
-This is enough to install 'webrute' in your commnd-line application.
+This is enough to install 'webrute' in your command-line application.
 ```bash
 pip install webrute
 ```
@@ -24,7 +19,6 @@ Data for bruteforce need to be prepared first before getting started.
 ```python
 import asyncio
 
-
 passwords_field = webrute.field("password", lambda: range(10))
 usernames_field = webrute.field(["Ben", "Jackson", "Marry"])
 
@@ -33,47 +27,48 @@ table.add_field(passwords_field)
 table.add_primary_field(usernames_field)
 ```
 
-Target in webrute can be 'str' which will be taken as url or 'dict' with 
-information for request.  
-Record will be used together with target which will then be sent as part
-of request.
+**Target** in 'broote' defines anything that can be used to interact with
+system to be bruteforced. Here in webrute, _str_ target will be considered url or but _dict_ can be provided with information defining target.
 
-This code sample shows target and record with final 'dict' that will be 
-used as part of request.  
+_dict_ as target will have to contain keywords arguments for request 
+including 'url', 'method', etc. Record can also provide arguments for 
+request just like target does.
 
-Keys used in target or record are same as arguments used for performing request with
-[requests](https://requests.readthedocs.io/projects/requests-html/en/latest/)
-library.
-
+Here is how target and record as _dict_ can be used to create arguments
+to be used in request.
 ```python
-target = {"url": "https://example.com/login", "method": "POST"}
-request = {"data": {"username": "Marry", "password": 10}}
+# target_dict contain basic information for making request.
+target_dict = {"url": "https://example.com/login", "method": "POST"}
+# record_dict provides extra information.
+# record_dict was created from table record as seen.
+record_dict = {"data": {"username": "Marry", "password": 10}}
 
-request_info = {
+# Keyword arguments of request are created from merge of the two.
+# record_dict has priority over target if common keys exists.
+request_kwargs = {
     "url": "https://example.com/", "method": "POST",  "data": {
         "username": "Marry", "password": 10}
 }
 ```
+> `record_dict` will have to be created manually from _table record_.
 
 Its best to have target hold only information that wont change and let record
-hold information that may change like 'password'.  
+hold information that may change like 'username' and 'password'.  
+
 
 > Basics of [broote](https://github.com/sekgobela-kevin/broote) are 
 required to continue.
 
 
-The most difficult function to define is `connect()` which is 
-the one performing request into target. Connector provides 'target',
-'record' and 'session' which are enough to perform request.
-
-Webrute already provide connector function which will perform the 
-actual request. This is best to ensure that to transform record
-into format for performing request.
+Webrute already provides connector which is used for making request at 
+target but being able to define connector can be fun.
 ```python
 import webrute
+import httpx
 
 def connector(target, record, session=None):
     # Creates new record containing 'data' field.
+    # Record gets tranformed before being passed to connector.
     new_record = webrute.record()
     new_record.add_item("data", dict(record))
     # webrute.connector() performs request and return response.
@@ -102,14 +97,10 @@ def failure(response):
 def target_reached(response):
     # This is current implementation of defaut target reached.
     # return webrute.target_reached(response)
-    return response.get_status_code() == 200
+    return response.is_success
 ```
 
-> Target reached by default is True when status code is 200.
-
-Things now start to look exatly as in
-[broote](https://github.com/sekgobela-kevin/broote) which also inclues 
-creation of runner.  
+> Target reached by default is True when status code is between 2XX.
 
 Creating request can take some time if not executed in parallel or 
 concurrently. Using `webrute.thread_runner` runner is best choice as it uses
@@ -118,40 +109,29 @@ threads for performing bruteforce.
 # Code for table is at top.
 # ... ... ... ... ... ... .
 
-def connector(target, record, session=None):
-    # Creates new record containing 'data' field.
-    new_record = webrute.record()
-    new_record.add_item("data", dict(record))
-    # webrute.connector() performs request and return response.
-    return webrute.connector(target, new_record, session)
+# Code for success(), failure() and connector() at top.
+# ... ... ... ... ... ... ... ... ... ... ... ... ... .
 
-def success(response):
-    return b"logged in as " in response.read()
-
-def failure(response):
-    return b"Username and password does not match" in response.read()
-
-def target_reached(response):
-    # This is current implementation of defaut target reached.
-    # return webrute.target_reached(response)
-    return response.get_status_code() == 200
-
-
-# Creates runner executing in multiple threads.
+# Creates target dict containing url and method of request.
 target = {"url": "https://example.com/login", "method": "POST"}
-runner = broote.thread_runner(target, table, connect=connect_webpage,success=success, failure=failure, target_reached=target_reached)
+
+# target_reached and connect arguments are optional.
+# Atleast one between success and failure needs to be provided.
+runner = webrute.create_thread_runner(
+    target, 
+    table, 
+    connect=connector, 
+    success=success, 
+    failure=failure
+)
 
 # Starts requests using connector()
 runner.start()
 runner.get_success_records() # [{'username': 'Marry', 'password': 8}]
 ```
-> [https://example.com/login](https://example.com/login) does not exists as used in above example.
 
-
-`webrute.async_runner` runner is also useful but uses asyncio to perfom
-request using 
-[aiohttp](https://docs.aiohttp.org/en/stable/client_quickstart.html)
-library.
+`webrute.create_async_runner` creates runner using asyncio which may be 
+faster than threads.
 ```python
 # Code for table is at top.
 # ... ... ... ... ... ... .
@@ -169,30 +149,44 @@ async def success(response):
 async def failure(response):
     return b"Username and password does not match" in await response.read()
 
-async def target_reached(response):
-    # This is current implementation of defaut target reached.
-    # return webrute.target_reached(response)
-    return response.get_status_code() == 200
 
+# Creates target dict containing url and method of request.
+target = {"url": "https://example.com/login", "method": "POST"}
 
 # Creates runner executing using asyncio
-target = {"url": "https://example.com/login", "method": "POST"}
-runner = broote.async_runner(target, table, connect=connect_webpage,success=success, failure=failure, target_reached=target_reached)
+runner = broote.create_async_runner(
+    target, 
+    table, 
+    connect=connect_webpage,
+    success=success, 
+    failure=failure
+)
+```
+> [https://example.com/login](https://example.com/login) is not guaranteed
+to exist or return responses as used above.
 
-# Starts requests using connector()
-# asyncio.run(runner.astart())
-runner.start()
-runner.get_success_records() # [{'username': 'Marry', 'password': 8}]
+Connector in most cases can be avoided by using separate function for
+transforming record. `record_transformer` argument can be passed which
+is function for transforming record.
+
+```python
+def transformer(record):
+    # Returns new record containing 'data' key.
+    new_record = webrute.record()
+    new_record.add_item("data", dict(record))
+    return new_record
+
+# Realise that 'connect' argument is not provided.
+runner = webrute.create_thread_runner(
+    target, 
+    table,
+    success=success, 
+    failure=failure,
+    record_transformer=transformer
+)
 ```
 
 > More features are available through 'broote' library.
-
-
-### Progress and Issues
-- 'webrute' is currently unstable and not guaranteed to work.
-- Not having automated tests means there are lot of bugs.
-- Undefined goals and requirements led to poor implementation.
-- 'webrute' code can be easily be replaced with 'broote' with ease.
 
 
 ### License
