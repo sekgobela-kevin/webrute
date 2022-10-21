@@ -20,13 +20,13 @@ async def async_target_reached(response):
     '''Checks if status code of response is between 2xx'''
     return response.is_success
 
-def target_error(response):
-    '''Checks if status code of response is between 4xx and 5xx'''
-    return response.is_error
+# def target_error(response):
+#     '''Checks if status code of response is between 4xx and 5xx'''
+#     return response.is_error
 
-async def async_target_error(response):
-    '''Returns True if stauts code of responce is 4xx and 5xx'''
-    return response.is_error
+# async def async_target_error(response):
+#     '''Returns True if stauts code of responce is 4xx and 5xx'''
+#     return response.is_error
 
 
 
