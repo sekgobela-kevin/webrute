@@ -1,4 +1,2 @@
-broote
-requests
-aiohttp
-requests-html
+broote<0.4.0
+httpx
