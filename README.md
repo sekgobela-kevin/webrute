@@ -17,10 +17,10 @@ pip install webrute
 ### Usage
 Data for bruteforce need to be prepared first before getting started.
 ```python
-import asyncio
+import webrute
 
 passwords_field = webrute.field("password", lambda: range(10))
-usernames_field = webrute.field(["Ben", "Jackson", "Marry"])
+usernames_field = webrute.field("username", ["Ben", "Jackson", "Marry"])
 
 table = webrute.table()
 table.add_field(passwords_field)
@@ -53,7 +53,9 @@ request_kwargs = {
 > `record_dict` will have to be created manually from _table record_.
 
 Its best to have target hold only information that wont change and let record
-hold information that may change like 'username' and 'password'.  
+hold information that may change like 'username' and 'password'.   
+
+Session can also be provided as _dict_ with arguments pass when creating session.
 
 
 > Basics of [broote](https://github.com/sekgobela-kevin/broote) are 
@@ -64,7 +66,6 @@ Webrute already provides connector which is used for making request at
 target but being able to define connector can be fun.
 ```python
 import webrute
-import httpx
 
 def connector(target, record, session=None):
     # Creates new record containing 'data' field.
@@ -79,7 +80,7 @@ def connector(target, record, session=None):
 Connector is now combined with `success()`, `failute()` and `target()` 
 functions.
 ```python
-import webroote
+import webrute
 
 def connector(target, record, session=None):
     # Creates new record containing 'data' field.
