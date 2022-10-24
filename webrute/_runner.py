@@ -22,6 +22,11 @@ def setup_runner(
     # It needs to be removed from keywords argument(avoid duplicate args).
     target = kwargs.get("target", target)
     del kwargs["target"]
+    # see https://github.com/sekgobela-kevin/webrute/issues/9
+    if "record_transformer" in kwargs:
+        if "record_tranformer" not in kwargs:
+            kwargs["record_tranformer"] = kwargs["record_transformer"]
+            del kwargs["record_transformer"]
     # Now pass target with the optional keyword arguments.
     super_.__init__(target, table, **kwargs)
 

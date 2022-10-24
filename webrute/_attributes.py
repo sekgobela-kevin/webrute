@@ -92,7 +92,7 @@ class Attributes():
 
 class RequestAttrs(Attributes):
     _supported_attrs = {
-        "method", "url", "params", "content", "content", "files",
+        "method", "url", "params", "data", "content", "files",
         "json", "headers", "cookies", "auth", "proxies", "timeout",
         "follow_redirects", "verify", "cert", "trust_env"
     }
