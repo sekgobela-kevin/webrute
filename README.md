@@ -155,10 +155,10 @@ async def failure(response):
 target = {"url": "https://example.com/login", "method": "POST"}
 
 # Creates runner executing using asyncio
-runner = broote.create_async_runner(
+runner = webrute.create_async_runner(
     target, 
     table, 
-    connect=connect_webpage,
+    connect=connector,
     success=success, 
     failure=failure
 )
