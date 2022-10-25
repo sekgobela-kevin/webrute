@@ -22,11 +22,6 @@ def setup_runner(
     # It needs to be removed from keywords argument(avoid duplicate args).
     target = kwargs.get("target", target)
     del kwargs["target"]
-    # see https://github.com/sekgobela-kevin/webrute/issues/9
-    if "record_transformer" in kwargs:
-        if "record_tranformer" not in kwargs:
-            kwargs["record_tranformer"] = kwargs["record_transformer"]
-            del kwargs["record_transformer"]
     # Now pass target with the optional keyword arguments.
     super_.__init__(target, table, **kwargs)
 
@@ -36,7 +31,7 @@ def setup_normal_runner(super_, target, table, **kwargs):
     connector = _connector.Connector(target)
     default_kargs = {
         "target": connector.get_target().get_attrs(),
-        "connect": connector.connect,
+        "connector": connector.connect,
         "session": connector.get_callable_session(),
         "target_reached": _functions.target_reached,
     }
@@ -47,7 +42,7 @@ def setup_async_runner(super_, target, table, **kwargs):
     connector = _connector.AsyncConnector(target)
     default_kargs = {
         "target": connector.get_target().get_attrs(),
-        "connect": connector.connect,
+        "connector": connector.connect,
         "session": connector.get_callable_session(),
         "target_reached": _functions.async_target_reached,
     }
@@ -84,7 +79,7 @@ if __name__ == "__main__":
     async def success(response):
         return False
 
-    def after(record, responce):
+    def after_connect(record, responce):
         print(record, responce.status_code)
 
     target = {
@@ -93,6 +88,6 @@ if __name__ == "__main__":
     }
     runner_ = async_runner("http://example.com/", table,
     max_success_records=1, success=success, max_multiple_primary_items=3,
-    optimize=True, after_attempt=after, max_workers=50)
+    optimize=True, after_connect=after_connect, max_workers=50)
     runner_.start()
     print(runner_.get_success_records())

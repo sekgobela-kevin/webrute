@@ -121,7 +121,7 @@ target = {"url": "https://example.com/login", "method": "POST"}
 runner = webrute.create_thread_runner(
     target, 
     table, 
-    connect=connector, 
+    connector=connector, 
     success=success, 
     failure=failure
 )
@@ -158,7 +158,7 @@ target = {"url": "https://example.com/login", "method": "POST"}
 runner = webrute.create_async_runner(
     target, 
     table, 
-    connect=connector,
+    connector=connector,
     success=success, 
     failure=failure
 )
