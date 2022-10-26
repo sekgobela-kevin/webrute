@@ -1,4 +1,7 @@
 from webrute import exceptions
+from webrute import _util
+
+import httpx
 
 
 class Attributes():
@@ -88,17 +91,21 @@ class Attributes():
 
     def copy(self):
         return type(self)(**self._attrs_dict)
-    
+
+
+class SessionAttrs(Attributes):
+    _supported_attrs = set(_util.extract_arguments(httpx.Client, True))
 
 class RequestAttrs(Attributes):
-    _supported_attrs = {
-        "method", "url", "params", "data", "content", "files",
-        "json", "headers", "cookies", "auth", "proxies", "timeout",
-        "follow_redirects", "verify", "cert", "trust_env"
-    }
+    # All arguments of httpx.request() are supported.
+    _supported_attrs = set(_util.extract_arguments(httpx.request, True))
 
 class RequestNoBodyAttrs(RequestAttrs):
-    _unsupported_attrs = {"data", "files", "json", "content"}
+    # All arguments of httpx.get() or similar methods are supported.
+    _supported_attrs = _util.extract_arguments(httpx.get, True)
+    # All arguments of not supported by httpx.get() or similar methods.
+    _unsupported_attrs = set(_util.extract_arguments(httpx.request, True)).\
+        difference_update(_util.extract_arguments(httpx.get, True))
 
 
 class RequestPostAttrs(RequestAttrs):
@@ -126,29 +133,6 @@ class RequestDeleteAttrs(RequestNoBodyAttrs):
     def __init__(self, **kwargs) -> None:
         kwargs["method"] = "DELETE"
         super().__init__(**kwargs)
-
-
-class TargetAttrs(RequestAttrs):
-    pass
-
-class TargetPostAttrs(RequestPostAttrs):
-    pass
-
-class TargetGetAttrs(TargetAttrs):
-    pass
-
-
-class RecordAttrs(RequestAttrs):
-    pass
-
-class SessionAttrs(Attributes):
-    _supported_attrs = {
-        "auth", "params", "headers", "cookies", "verify", "cert", 
-        "http1", "http2", "proxies", "mounts", "timeout", "follow_redirects",
-         "limits", "max_keepalive_connections", "keepalive_expiry", 
-         "max_redirects", "event_hooks", "base_url", "transport", "app", 
-         "trust_env", "default_encoding"
-    }
 
 
 
