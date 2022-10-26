@@ -26,27 +26,33 @@ def setup_runner(
     super_.__init__(target, table, **kwargs)
 
 
+def setup_connector_runner(connector_type, super_, target, table, **kwargs):
+    # Setup runner using connector instance(_connector.Connector)
+    session = kwargs.get("session", None)
+    connector = connector_type(target, session)
+    if issubclass(connector_type, _connector.Connector):
+        session_closer = connector.close
+    elif isinstance(connector_type, _connector.AsyncConnector):
+        session_closer = connector.aclose
+    default_kwargs = {
+        "target": connector.get_target(),
+        "connector": connector.connect,
+        # connector.get_callable_session() gets callable with session.
+        "target_reached": _functions.target_reached,
+        "session": connector.get_callable_session(),
+        "session_closer": session_closer
+    }
+    return setup_runner(default_kwargs, super_, target, table, **kwargs)
+
 def setup_normal_runner(super_, target, table, **kwargs):
     # Setups synchronous runner instances with certain arguments.
-    connector = _connector.Connector(target)
-    default_kargs = {
-        "target": connector.get_target().get_attrs(),
-        "connector": connector.connect,
-        "session": connector.get_callable_session(),
-        "target_reached": _functions.target_reached,
-    }
-    return setup_runner(default_kargs, super_, target, table, **kwargs)
+    return setup_connector_runner(_connector.Connector, super_, target, 
+    table, **kwargs)
 
 def setup_async_runner(super_, target, table, **kwargs):
     # Setups async runner instances with certain arguments.
-    connector = _connector.AsyncConnector(target)
-    default_kargs = {
-        "target": connector.get_target().get_attrs(),
-        "connector": connector.connect,
-        "session": connector.get_callable_session(),
-        "target_reached": _functions.async_target_reached,
-    }
-    return setup_runner(default_kargs, super_, target, table, **kwargs)
+    return setup_connector_runner(_connector.AsyncConnector, super_, 
+    target, table, **kwargs)
 
 
 class basic_runner(broote.basic_runner):
