@@ -1,3 +1,5 @@
+from webrute import _attributes
+
 import webrute
 import httpx
 
@@ -77,6 +79,27 @@ class Connector():
             err_msg = err_msg.format(type(target).__name__)
             raise TypeError(err_msg)
 
+    @classmethod
+    def guess_connector_method(cls, connector_args, methods=("GET","POST")):
+        # Guesses connector/request method from connector arguments
+        if "method" in connector_args:
+            # No need to guess when method already exists.
+            return connector_args["method"]
+        
+        # Ensures that connector arguments are set(mosly will be dict)
+        connector_args = set(connector_args)
+
+        # Checks if connector arguments are GET request like.
+        # This done by checking if POST like specific argument exist.
+        unsupported = _attributes.RequestNoBodyAttrs.get_unsupported_attrs()
+        if connector_args.intersection(unsupported):
+            return methods[0]
+
+        # Its likely POST request like method but cant be sure.
+        # First check if atleast 50% of arguments are supported.
+        elif _attributes.RequestAttrs._supported_attrs(connector_args, 0.5):
+            return methods[1]
+
 
     @classmethod
     def transform_record(cls, record, method):
@@ -88,11 +111,16 @@ class Connector():
             return webrute.record({"data": record})
         elif method in {"GET", "OPTION", "DELETE"}:
             return webrute.record({"params": record})
-        return record
+        else:
+            return record
 
     def transform_connector_arguments(cls, connector_args):
         # Transforms connector arguments to be compatible with connector.
-        pass
+        method = cls.guess_connector_method(connector_args)
+        if method: 
+            connector_args = connector_args.copy()
+            connector_args["method"] = method
+        return connector_args
 
     @classmethod
     def create_connector_arguments(cls, target, record):
