@@ -25,16 +25,20 @@ def setup_runner(
 def setup_connector_runner(connector_type, super_, target, table, **kwargs):
     # Setup runner using connector instance(_connector.Connector)
     session = kwargs.get("session", None)
-    connector = connector_type(target, session)
-    if issubclass(connector_type, _connector.Connector):
-        session_closer = connector.close
-    elif isinstance(connector_type, _connector.AsyncConnector):
-        session_closer = connector.aclose
+    if issubclass(connector_type, _connector.AsyncConnector):
+        connector = _functions.async_connector
+        session_closer = _functions.async_session_closer
+        def callable_session():
+            return _functions.setup_async_session(session)
+    elif issubclass(connector_type, _connector.Connector):
+        connector = _functions.connector
+        session_closer = _functions.session_closer
+        def callable_session():
+            return _functions.setup_session(session)
     default_kwargs = {
-        "connector": connector.connect,
+        "connector": connector,
         "target_reached": _functions.target_reached,
-        "session": connector.get_callable_session(),
-        # connector.get_callable_session() gets callable with session.
+        "session": callable_session,
         "session_closer": session_closer
     }
     return setup_runner(default_kwargs, super_, target, table, **kwargs)

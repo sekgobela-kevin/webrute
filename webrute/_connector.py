@@ -149,6 +149,10 @@ class Connector():
         else:
             return httpx.request(**kwargs)
 
+    @classmethod
+    def get_session_type(cls):
+        return cls._session_type
+
     def get_target(self):
         return self._target
 

@@ -65,3 +65,34 @@ def guess_connector_method(connector_args, methods=("GET", "POST")):
 def create_connector_arguments(target, record):
     '''Creates connector/request arguments from target and record'''
     return _connector.Connector.create_connector_arguments(target, record)
+
+
+def create_session(session):
+    '''Creates session(httpx.Client) from object passed as session'''
+    return _connector.Connector.create_session(session)
+
+def create_async_session(session):
+    '''Creates session(httpx.AsyncClient) from object passed as session'''
+    return _connector.AsyncConnector.create_session(session)
+
+
+def setup_session(session):
+    '''Creates session(httpx.Client) from object passed as session'''
+    if session is None:
+        return _connector.Connector.get_session_type()()
+    return create_session(session)
+
+def setup_async_session(session):
+    '''Creates session(httpx.AsyncClient) from object passed as session'''
+    if session is None:
+        return _connector.AsyncConnector.get_session_type()()
+    return create_async_session(session)
+
+
+def session_closer(session):
+    '''Closes session(httpx.AsyncClient)'''
+    session.close()
+
+async def async_session_closer(session):
+    '''Closes session(httpx.AsyncClient)'''
+    await session.aclose()
