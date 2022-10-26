@@ -18,10 +18,6 @@ def setup_runner(
         #value = kwargs.get(dkey, None)
         if dkey not in kwargs:
             kwargs[dkey] = dval
-    # Gets target from kwargs as is it positional argument.
-    # It needs to be removed from keywords argument(avoid duplicate args).
-    target = kwargs.get("target", target)
-    del kwargs["target"]
     # Now pass target with the optional keyword arguments.
     super_.__init__(target, table, **kwargs)
 
@@ -35,11 +31,10 @@ def setup_connector_runner(connector_type, super_, target, table, **kwargs):
     elif isinstance(connector_type, _connector.AsyncConnector):
         session_closer = connector.aclose
     default_kwargs = {
-        "target": connector.get_target(),
         "connector": connector.connect,
-        # connector.get_callable_session() gets callable with session.
         "target_reached": _functions.target_reached,
         "session": connector.get_callable_session(),
+        # connector.get_callable_session() gets callable with session.
         "session_closer": session_closer
     }
     return setup_runner(default_kwargs, super_, target, table, **kwargs)

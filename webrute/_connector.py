@@ -8,18 +8,18 @@ class Connector():
     _session_type = httpx.Client
 
     def __init__(self, target, session=None) -> None:
-        # Store target and session before being overiden
+        # Store target and session before being overridden
         self._original_target = target
         self._original_session = session
 
-        # Setup target and session by overiding.
+        # Setup target and session by overriding.
         self._target = self._setup_target(target)
         self._session = self._setup_session(session)
         self._callable_session = self._setup_callable_session(session)
 
     @classmethod
     def _setup_target(cls, target):
-        # Setupstarget to ensure its in right format and type.
+        # Setups target to ensure its in right format and type.
         # Avoid using 'self' here as method is called by initializer.
         return cls.create_target(target)
 
@@ -42,7 +42,7 @@ class Connector():
 
     @classmethod
     def create_callable_session(cls, session):
-        # Creates session wrapped withon callable object(function)
+        # Creates session wrapped within callable object(function)
         return lambda: cls.create_session(session) 
     
     @classmethod
@@ -86,19 +86,21 @@ class Connector():
             # No need to guess when method already exists.
             return connector_args["method"]
         
-        # Ensures that connector arguments are set(mosly will be dict)
+        # Ensures that connector arguments are set(mostly will be dict)
         connector_args = set(connector_args)
 
-        # Checks if connector arguments are GET request like.
-        # This done by checking if POST like specific argument exist.
-        unsupported = _attributes.RequestNoBodyAttrs.get_unsupported_attrs()
+        # Checks if connector arguments are POST request like.
+        # This done by checking if POST specific specific arguments exist.
+        unsupported = _attributes.RequestNoBodyAttrs.get_unsupported_attrs(
+            connector_args
+        )
         if connector_args.intersection(unsupported):
-            return methods[0]
-
-        # Its likely POST request like method but cant be sure.
-        # First check if atleast 50% of arguments are supported.
-        elif _attributes.RequestAttrs._supported_attrs(connector_args, 0.5):
             return methods[1]
+
+        # Not having POST arguments means it may be GET like request.
+        # First check if at least 50% of arguments are supported.
+        elif _attributes.RequestAttrs.attrs_supported(connector_args, 0.5):
+            return methods[0]
 
 
     @classmethod
@@ -106,7 +108,7 @@ class Connector():
         # Transforms record into one supported by connector.
         # 'broote' now support record transformer.
         # Its only developer who knows how to transform record.
-        method = method.lower()
+        method = method.upper()
         if method in  {"POST", "PUT"}:
             return webrute.record({"data": record})
         elif method in {"GET", "OPTION", "DELETE"}:
@@ -177,7 +179,7 @@ class AsyncConnector(Connector):
             return await session.request(**kwargs)
         else:
             # Session need to be created manually as it was not provided.
-            # That means manually calling session function if neccessary.
+            # That means manually calling session function if necessary.
             async with cls._callable_session() as session:
                 return await session.request(**kwargs)
 

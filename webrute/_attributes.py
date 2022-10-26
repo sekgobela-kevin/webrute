@@ -100,20 +100,25 @@ class RequestAttrs(Attributes):
     # All arguments of httpx.request() are supported.
     _supported_attrs = set(_util.extract_arguments(httpx.request, True))
 
+class RequestBodyAttrs(RequestAttrs):
+    pass
+
 class RequestNoBodyAttrs(RequestAttrs):
     # All arguments of httpx.get() or similar methods are supported.
     _supported_attrs = _util.extract_arguments(httpx.get, True)
+
     # All arguments of not supported by httpx.get() or similar methods.
-    _unsupported_attrs = set(_util.extract_arguments(httpx.request, True)).\
-        difference_update(_util.extract_arguments(httpx.get, True))
+    # {'data', 'json', 'content', 'files', 'method'}
+    _unsupported_attrs = set(_util.extract_arguments(httpx.request, True))\
+        .difference(_util.extract_arguments(httpx.get, True))
 
 
-class RequestPostAttrs(RequestAttrs):
+class RequestPostAttrs(RequestBodyAttrs):
     def __init__(self, **kwargs) -> None:
         kwargs["method"] = "POST"
         super().__init__(**kwargs)
 
-class RequestPutAttrs(RequestAttrs):
+class RequestPutAttrs(RequestBodyAttrs):
     def __init__(self, **kwargs) -> None:
         kwargs["method"] = "PUT"
         super().__init__(**kwargs)
