@@ -27,17 +27,19 @@ def setup_connector_runner(connector_type, super_, target, table, **kwargs):
     session = kwargs.get("session", None)
     if issubclass(connector_type, _connector.AsyncConnector):
         connector = _functions.async_connector
+        target_reached = _functions.async_target_reached
         session_closer = _functions.async_session_closer
         def callable_session():
             return _functions.setup_async_session(session)
     elif issubclass(connector_type, _connector.Connector):
         connector = _functions.connector
+        target_reached = _functions.target_reached
         session_closer = _functions.session_closer
         def callable_session():
             return _functions.setup_session(session)
     default_kwargs = {
         "connector": connector,
-        "target_reached": _functions.target_reached,
+        "target_reached": target_reached,
         "session": callable_session,
         "session_closer": session_closer
     }

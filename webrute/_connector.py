@@ -184,7 +184,7 @@ class AsyncConnector(Connector):
         else:
             # Session need to be created manually as it was not provided.
             # That means manually calling session function if necessary.
-            async with cls._callable_session() as session:
+            async with cls._session_type() as session:
                 return await session.request(**kwargs)
 
     async def aclose(self):
