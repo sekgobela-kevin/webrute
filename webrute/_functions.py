@@ -48,13 +48,14 @@ def transform_target(target):
     dict being returned unchanged.'''
     return _connector.Connector.create_target(target)
 
-def transform_connector_arguments(connector_args):
+def transform_connector_arguments(connector_args, methods=("GET", "POST")):
     '''Transforms arguments of connector/request.
     
     Method if not provided will be guessed from existing arguments.
     Original connector arguments gets returned if no transformation 
     has been performed on connector arguments.'''
-    return _connector.Connector.transform_connector_arguments(connector_args)
+    return _connector.Connector.transform_connector_arguments(
+        connector_args, methods)
 
 def guess_connector_method(connector_args, methods=("GET", "POST")):
     '''Guesses method to use with arguments of connector/request.'''

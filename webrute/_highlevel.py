@@ -1,8 +1,12 @@
 from webrute import _runner
 
 
+def create_runner(target, table, **kwargs):
+    '''Creates runner object'''
+    return _runner.basic_runner(target, table, **kwargs)
+
 def create_basic_runner(target, table, **kwargs):
-    '''Creates synchronous runnerthat is non conccurrent'''
+    '''Creates synchronous, non conccurrent runner'''
     return _runner.basic_runner(target, table, **kwargs)
 
 def create_thread_runner(target, table, **kwargs):

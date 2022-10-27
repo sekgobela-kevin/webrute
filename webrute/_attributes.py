@@ -28,7 +28,7 @@ class Attributes():
         return self._attrs_dict
 
     def get_attrs_keys(self):
-        return tuple(self._attrs_dict.key())
+        return tuple(self._attrs_dict.keys())
 
     def get_attrs_values(self):
         return tuple(self._attrs_dict.values())
@@ -46,20 +46,20 @@ class Attributes():
 
     @classmethod
     def attrs_supported(cls, attrs, min_ratio=None):
-        if min_ratio is not None:
+        if min_ratio is None:
             return all(map(cls.attr_supported, attrs))
         else:
             filtered_attrs = list(filter(cls.attr_supported, attrs))
             return min_ratio <= len(filtered_attrs)/len(attrs)
 
     @classmethod
-    def get_supported_attrs(cls, attr):
+    def get_supported_attrs(cls):
         if cls._supported_attrs is None:
             return set()
         return cls._supported_attrs
 
     @classmethod
-    def get_unsupported_attrs(cls, attr):
+    def get_unsupported_attrs(cls):
         return cls._unsupported_attrs
 
     @classmethod

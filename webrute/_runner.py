@@ -56,6 +56,10 @@ def setup_async_runner(super_, target, table, **kwargs):
     target, table, **kwargs)
 
 
+class runner(broote.runner):
+    def __init__(self, target, table, **kwargs):
+        setup_normal_runner(super(), target, table, **kwargs)
+
 class basic_runner(broote.basic_runner):
     def __init__(self, target, table, **kwargs):
         setup_normal_runner(super(), target, table, **kwargs)

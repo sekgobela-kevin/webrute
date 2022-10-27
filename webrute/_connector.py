@@ -91,9 +91,7 @@ class Connector():
 
         # Checks if connector arguments are POST request like.
         # This done by checking if POST specific specific arguments exist.
-        unsupported = _attributes.RequestNoBodyAttrs.get_unsupported_attrs(
-            connector_args
-        )
+        unsupported = _attributes.RequestNoBodyAttrs.get_unsupported_attrs()
         if connector_args.intersection(unsupported):
             return methods[1]
 
@@ -116,9 +114,13 @@ class Connector():
         else:
             return record
 
-    def transform_connector_arguments(cls, connector_args):
+    @classmethod
+    def transform_connector_arguments(cls, connector_args, methods=None):
         # Transforms connector arguments to be compatible with connector.
-        method = cls.guess_connector_method(connector_args)
+        if methods is not None:
+            method = cls.guess_connector_method(connector_args, methods)
+        else:
+            method = cls.guess_connector_method(connector_args)
         if method: 
             connector_args = connector_args.copy()
             connector_args["method"] = method
