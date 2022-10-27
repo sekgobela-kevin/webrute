@@ -145,10 +145,10 @@ async def connector(target, record, session=None):
     return await webrute.async_connector(target, new_record, session)
 
 async def success(response):
-    return b"logged in as " in await response.read()
+    return b"logged in as " in response.read()
 
 async def failure(response):
-    return b"Username and password does not match" in await response.read()
+    return b"Username and password does not match" in response.read()
 
 
 # Creates target dict containing url and method of request.
