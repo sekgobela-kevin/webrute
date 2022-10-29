@@ -99,20 +99,14 @@ class Test(TestSetUp, unittest.TestCase):
             self.assertEqual(session_, session)
 
 
-    def setup_session(self):
+    def test_setup_session(self):
         with _functions.setup_session(None) as session:
             self.assertIsInstance(session, httpx.Client)
 
 
-    def session_closer(self):
+    def test_session_closer(self):
         with httpx.Client() as session:
             _functions.session_closer(session)
-            self.assertTrue(session.is_closed)
-
-
-    async def async_session_closer(self):
-        with httpx.AsyncClient() as session:
-            await _functions.async_session_closer(session)
             self.assertTrue(session.is_closed)
 
 
@@ -131,9 +125,9 @@ class AsyncTest(TestSetUp, unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await _functions.target_reached(self._success_response))
         self.assertFalse(await _functions.target_reached(self._error_response))
 
-    async def async_target_error(self):
-        self.assertFalse(await _functions.target_error(self._success_response))
-        self.assertTrue(await _functions.target_error(self._error_response))
+    async def test_async_target_error(self):
+        self.assertFalse(await _functions.async_target_error(self._success_response))
+        self.assertTrue(await _functions.async_target_error(self._error_response))
 
     async def test_create_async_session(self):
         async with _functions.create_async_session({"headers":{}}) as session:
@@ -142,9 +136,14 @@ class AsyncTest(TestSetUp, unittest.IsolatedAsyncioTestCase):
             session_ = _functions.create_async_session(session)
             self.assertEqual(session_, session)
 
-    async def setup_async_session(self):
+    async def test_setup_async_session(self):
         async with _functions.setup_async_session(None) as session:
             self.assertIsInstance(session, httpx.AsyncClient)
+
+    async def test_async_session_closer(self):
+        async with httpx.AsyncClient() as session:
+            await _functions.async_session_closer(session)
+            self.assertTrue(session.is_closed)
 
 
 if __name__ == "__main__":

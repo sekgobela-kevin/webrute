@@ -26,8 +26,8 @@ class TestConnect(setup_tests.SetUpTests):
             self.assertIsInstance(response, httpx.Response)
             self.assertFalse(session.is_closed)
 
-        response = webrute.connector(self._webapp_url, record, webrute.Session)
-        self.assertIsInstance(response, httpx.Response)
+        # response = webrute.connector(self._webapp_url, record, webrute.Session)
+        # self.assertIsInstance(response, httpx.Response)
 
 
 class TestAsyncConnect(setup_tests.AsyncSetUpTests):
@@ -40,9 +40,9 @@ class TestAsyncConnect(setup_tests.AsyncSetUpTests):
         self.assertEqual(response.request.method, "GET")
         self.assertEqual(response.request.url, self._webapp_url)
 
-        # target = {"url":self._webapp_url, "method":"POST"}
-        # response = await webrute.async_connector(target, record)
-        # self.assertEqual(response.request.method, "POST")
+        target = {"url":self._webapp_url, "method":"POST"}
+        response = await webrute.async_connector(target, record)
+        self.assertEqual(response.request.method, "POST")
 
     async def test_connector_session(self):
         record = webrute.transform_record(self._webapp_records[0], "POST")
