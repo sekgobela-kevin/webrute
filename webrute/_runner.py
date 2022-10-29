@@ -2,6 +2,7 @@ from webrute import _connector
 from webrute import _functions
 
 import broote
+import httpx
 
 
 def setup_runner(
@@ -29,25 +30,28 @@ def setup_connector_runner(connector_type, super_, target, table, **kwargs):
         connector = _functions.async_connector
         target_reached = _functions.async_target_reached
         async def session_closer(session):
-            try:
-                # sniffio._impl.AsyncLibraryNotFoundError: unknown async 
-                # library, or not in async context
-                # RuntimeError: The connection pool was closed while 8 HTTP 
-                # requests/responses were still in-flight.
-                await _functions.async_session_closer(session)
-            except RuntimeError:
-                pass
+            if not isinstance(session, httpx.AsyncClient):
+                try:
+                    # sniffio._impl.AsyncLibraryNotFoundError: unknown async 
+                    # library, or not in async context
+                    # RuntimeError: The connection pool was closed while 8 HTTP 
+                    # requests/responses were still in-flight.
+                    await _functions.async_session_closer(session)
+                except RuntimeError:
+                    pass
 
         def callable_session():
             return _functions.setup_async_session(session)
+    
     elif issubclass(connector_type, _connector.Connector):
         connector = _functions.connector
         target_reached = _functions.target_reached
         def session_closer(session):
-            try:
-                _functions.session_closer(session)
-            except RuntimeError:
-                pass
+            if not isinstance(session, httpx.Client):
+                try:
+                    _functions.session_closer(session)
+                except RuntimeError:
+                    pass
         def callable_session():
             return _functions.setup_session(session)
     default_kwargs = {
