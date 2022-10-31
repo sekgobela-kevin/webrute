@@ -35,4 +35,4 @@ del types
 
 
 __name__ = "webrute"
-___version__ = "0.2.0"
+___version__ = "0.2.1"
