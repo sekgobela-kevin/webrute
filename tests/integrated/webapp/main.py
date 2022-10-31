@@ -4,10 +4,15 @@ from flask import session
 from flask import request
 from flask import g
 
-
 from typing import Dict
 import json
 import os
+
+import logging
+
+
+logger = logging.getLogger('werkzeug')
+logger.disabled = True
 
 
 app = Flask(__name__)
