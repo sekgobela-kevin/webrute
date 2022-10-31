@@ -80,9 +80,12 @@ class BaseTestRunner():
             self._login_target,
             self._table, 
             success=self.success,
-            session=lambda: self._session
+            session=lambda: self._session,
+            record_transformer=self.record_trandformer
         )
-        # Thread runner is failing to close session
+        runner.start()
+
+        # Thread runner is failing to close session(bug within perock)
         if not isinstance(runner, webrute.thread_runner):
             self.assertTrue(self._session.is_closed)
 

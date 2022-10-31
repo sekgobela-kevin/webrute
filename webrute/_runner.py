@@ -25,12 +25,15 @@ def setup_runner(
 
 def setup_connector_runner(connector_type, super_, target, table, **kwargs):
     # Setup runner using connector instance(_connector.Connector)
-    session = kwargs.get("session", None)
+    fake_session = object()
+    original_session = kwargs.get("session", fake_session)
+    default_kwargs = {}
     if issubclass(connector_type, _connector.AsyncConnector):
         connector = _functions.async_connector
         target_reached = _functions.async_target_reached
         async def session_closer(session):
-            if not isinstance(session, httpx.AsyncClient):
+            # Closes httpx.Client if not provided directly
+            if not isinstance(original_session, httpx.AsyncClient):
                 try:
                     # sniffio._impl.AsyncLibraryNotFoundError: unknown async 
                     # library, or not in async context
@@ -39,27 +42,37 @@ def setup_connector_runner(connector_type, super_, target, table, **kwargs):
                     await _functions.async_session_closer(session)
                 except RuntimeError:
                     pass
-
-        def callable_session():
-            return _functions.setup_async_session(session)
+        async def callable_session():
+            # Creates httpx.Client from session
+            if original_session == fake_session:
+                return _functions.setup_async_session(None)
+            return _functions.create_async_session(original_session)
     
     elif issubclass(connector_type, _connector.Connector):
         connector = _functions.connector
         target_reached = _functions.target_reached
         def session_closer(session):
-            if not isinstance(session, httpx.Client):
+            # Closes httpx.AsyncClient if not provided directly
+            if not isinstance(original_session, httpx.Client):
                 try:
                     _functions.session_closer(session)
                 except RuntimeError:
                     pass
         def callable_session():
-            return _functions.setup_session(session)
-    default_kwargs = {
-        "connector": connector,
-        "target_reached": target_reached,
-        "session": callable_session,
-        "session_closer": session_closer
-    }
+            # Creates httpx.AsyncClient from session
+            if original_session == fake_session:
+                return _functions.setup_session(None)
+            return _functions.setup_session(original_session)
+    else:
+        err_msg = "Connector type should be '_connector.Connector subclass' " +\
+            "not '{}'"
+        raise TypeError(err_msg.format(connector_type))
+    
+    # Arguments will be used if corresponding arguments not provided.
+    default_kwargs["connector"] = connector
+    default_kwargs["target_reached"] = target_reached
+    default_kwargs["session_closer"] = session_closer
+    default_kwargs["session"] = callable_session
     return setup_runner(default_kwargs, super_, target, table, **kwargs)
 
 def setup_normal_runner(super_, target, table, **kwargs):
